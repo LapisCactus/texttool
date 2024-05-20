@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>テキスト表示ページ</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icons/icon-192x192.png">
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-bar">
+        <button class="menu-button" onclick="toggleMenu()">&#9776;</button>
+        <h1>テキスト表示アプリ</h1>
+    </div>
+    <div class="container">
+        <div class="left-column" id="leftColumn">
+            <h2>CSVファイルの読み込み</h2>
+            <label for="csvUrl">CSVファイルのURLを入力してください：</label>
+            <input type="text" id="csvUrl" name="csvUrl">
+            <button onclick="loadCsv()">読み込み</button>
+
+            <h2>グループ選択</h2>
+            <label for="groupSelect">グループを選択してください：</label>
+            <select id="groupSelect" name="groupSelect" onchange="updateFileList()">
+                <option value="">選択してください</option>
+            </select>
+
+            <label for="fileTitle">ファイルタイトルを選択してください：</label>
+            <select id="fileTitle" name="fileTitle" onchange="loadText()">
+                <option value="">選択してください</option>
+            </select>
+            <button onclick="saveToLocal()">ローカルストレージに保存</button>
+            <button onclick="clearLocal()">ローカルストレージをクリア</button>
+            <button onclick="loadAllData()">すべてのデータを読み込む</button>
+
+            <h2>ローカルストレージ検索</h2>
+            <label for="searchKeyword">キーワードを入力してください：</label>
+            <input type="text" id="searchKeyword" name="searchKeyword">
+            <button onclick="searchLocal()">検索</button>
+        </div>
+        <div class="right-column" id="rightColumn">
+            <div id="textContent">
+                <p>ここにテキストが表示されます。</p>
+            </div>
+            <div id="loadingStatus">
+                <p>ここに読み込みステータスが表示されます。</p>
+            </div>
+            <div id="searchResults">
+                <p>ここに検索結果が表示されます。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            updateGroupSelect();
+        });
+
+        function toggleMenu() {
+            const leftColumn = document.getElementById('leftColumn');
+            const rightColumn = document.getElementById('rightColumn');
+            if (leftColumn.style.display === 'none') {
+                leftColumn.style.display = 'block';
+                rightColumn.style.flex = '1';
+            } else {
+                leftColumn.style.display = 'none';
+                rightColumn.style.flex = '100%';
+            }
+        }
+
+        function loadCsv() {
+            const csvUrl = document.getElementById('csvUrl').value;
+
+            fetch(csvUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('CSVファイルの読み込みに失敗しました');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    const groupName = prompt('このCSVファイルのグループ名を入力してください:');
+                    if (!groupName) {
+                        throw new Error('グループ名が入力されませんでした');
+                    }
+                    
+                    const lines = data.split('\n');
+                    const files = lines.map(line => {
+                        const [fileUrl, title] = line.split(',');
+                        return { fileUrl: fileUrl.trim(), title: title.trim() };
+                    });
+
+                    localStorage.setItem(`group_${groupName}`, JSON.stringify(files));
+                    updateGroupSelect();
+                    alert('CSVファイルの読み込みと保存が完了しました');
+                })
+                .catch(error => {
+                    console.error('エラー:', error);
+                });
+        }
+
+        function updateGroupSelect() {
+            const groupSelect = document.getElementById('groupSelect');
+            groupSelect.innerHTML = '<option value="">選択してください</option>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('group_')) {
+                    const groupName = key.split('_')[1];
+                    const option = document.createElement('option');
+                    option.value = groupName;
+                    option.text = groupName;
+                    groupSelect.add(option);
+                }
+            }
+        }
+
+        function updateFileList() {
+            const groupSelect = document.getElementById('groupSelect');
+            const groupName = groupSelect.value;
+            const fileTitleSelect = document.getElementById('fileTitle');
+            fileTitleSelect.innerHTML = '<option value="">選択してください</option>';
+
+            if (groupName) {
+                const files = JSON.parse(localStorage.getItem(`group_${groupName}`));
+                files.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file.fileUrl;
+                    option.text = file.title;
+                    fileTitleSelect.add(option);
+                });
+            }
+        }
+
+        function loadText() {
+            const fileTitleSelect = document.getElementById('fileTitle');
+            const fileUrl = fileTitleSelect.value;
+
+            if (!fileUrl) {
+                document.getElementById('textContent').innerText = 'ファイルを選択してください';
+                return;
+            }
+
+            const savedText = localStorage.getItem(`text_${fileUrl}`);
+            if (savedText) {
+                document.getElementById('textContent').innerText = savedText;
+                return;
+            }
+
+            fetch(fileUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('テキストファイルの読み込みに失敗しました');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    document.getElementById('textContent').innerText = data;
+                })
+                .catch(error => {
+                    document.getElementById('textContent').innerText = error.message;
+                });
+        }
+
+        function saveToLocal() {
+            const fileTitleSelect = document.getElementById('fileTitle');
+            const fileUrl = fileTitleSelect.value;
+            const textContent = document.getElementById('textContent').innerText;
+
+            if (textContent && fileUrl) {
+                localStorage.setItem(`text_${fileUrl}`, textContent);
+                alert('テキストがローカルストレージに保存されました');
+            } else {
+                alert('保存するテキストがありません');
+            }
+        }
+
+        function clearLocal() {
+            const fileTitleSelect = document.getElementById('fileTitle');
+            const fileUrl = fileTitleSelect.value;
+            if (fileUrl) {
+                localStorage.removeItem(`text_${fileUrl}`);
+                alert(`ファイル${fileUrl}のテキストがローカルストレージから削除されました`);
+                document.getElementById('textContent').innerText = '';
+            } else {
+                alert('削除するファイルを選択してください');
+            }
+        }
+
+        function searchLocal() {
+            const keyword = document.getElementById('searchKeyword').value.toLowerCase();
+            const searchResults = document.getElementById('searchResults');
+            searchResults.innerHTML = '';
+
+            const groupSelect = document.getElementById('groupSelect');
+            const groupName = groupSelect.value;
+
+            if (!groupName) {
+                searchResults.innerHTML = '<p>グループを選択してください。</p>';
+                return;
+            }
+
+            let results = [];
+            const groupFiles = JSON.parse(localStorage.getItem(`group_${groupName}`)) || [];
+            groupFiles.forEach(file => {
+                const textContent = localStorage.getItem(`text_${file.fileUrl}`).toLowerCase();
+                const lines = textContent.split('\n');
+                let hitCount = 0;
+                let matches = [];
+
+                lines.forEach((line, index) => {
+                    if (line.includes(keyword)) {
+                        hitCount++;
+                        matches.push({ line: line, lineNumber: index + 1 });
+                    }
+                });
+
+                if (hitCount > 0) {
+                    results.push({ filename: file.title, hitCount: hitCount, matches: matches });
+                }
+            });
+
+            let resultsHTML = '';
+            if (results.length === 0) {
+                resultsHTML = '<p>該当するテキストが見つかりませんでした。</p>';
+            } else {
+                results.forEach((result, index) => {
+                    resultsHTML += `
+                        <p><strong class="filename" data-index="${index}" onclick="toggleMatches(${index})">ファイル名: ${result.filename} (ヒット件数: ${result.hitCount})</strong></p>
+                        <div class="matches" id="matches_${index}" style="display: none;">
+                    `;
+                    result.matches.forEach(match => {
+                        resultsHTML += `<p>行番号: ${match.lineNumber} - ${match.line}</p>`;
+                    });
+                    resultsHTML += '</div>';
+                });
+            }
+            searchResults.innerHTML = resultsHTML;
+        }
+
+        function toggleMatches(index) {
+            const matchesDiv = document.getElementById(`matches_${index}`);
+            if (matchesDiv.style.display === 'none') {
+                matchesDiv.style.display = 'block';
+            } else {
+                matchesDiv.style.display = 'none';
+            }
+        }
+
+        function loadAllData() {
+            const loadingStatus = document.getElementById('loadingStatus');
+            const groupSelect = document.getElementById('groupSelect');
+            const groupName = groupSelect.value;
+
+            if (!groupName) {
+                loadingStatus.innerHTML = '<p>グループを選択してください。</p>';
+                return;
+            }
+
+            const files = JSON.parse(localStorage.getItem(`group_${groupName}`));
+
+            const filePromises = files.map(file => {
+                if (!localStorage.getItem(`text_${file.fileUrl}`)) {
+                    loadingStatus.innerHTML += `<p>${file.title}を読み込み中です...</p>`;
+
+                    return fetch(file.fileUrl)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`${file.title}の読み込みに失敗しました`);
+                            }
+                            return response.text();
+                        })
+                        .then(text => {
+                            localStorage.setItem(`text_${file.fileUrl}`, text);
+                            loadingStatus.innerHTML += `<p>${file.title}を読み込み完了</p>`;
+                        })
+                        .catch(error => {
+                            loadingStatus.innerHTML += `<p>${error.message}</p>`;
+                        });
+                }
+                return Promise.resolve();
+            });
+
+            Promise.all(filePromises)
+                .then(() => {
+                    loadingStatus.innerHTML += '<p>すべてのデータの読み込みが完了しました。</p>';
+                })
+                .catch(error => {
+                    loadingStatus.innerHTML = `<p>エラー: ${error.message}</p>`;
+                });
+        }
+
+        // Service Workerの登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                    console.log('Service Workerの登録に成功しました:', registration.scope);
+                }, function(err) {
+                    console.log('Service Workerの登録に失敗しました:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
