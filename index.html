@@ -293,7 +293,7 @@
         // Service Workerの登録
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                navigator.serviceWorker.register('service-worker.js').then(function(registration) {
                     console.log('Service Workerの登録に成功しました:', registration.scope);
                 }, function(err) {
                     console.log('Service Workerの登録に失敗しました:', err);
