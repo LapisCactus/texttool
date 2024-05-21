@@ -7,6 +7,7 @@
     <link rel="icon" href="icons/icon-192x192.png">
     <meta name="theme-color" content="#000000">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 </head>
 <body>
     <div class="app-bar">
@@ -15,10 +16,9 @@
     </div>
     <div class="container">
         <div class="left-column" id="leftColumn">
-            <h2>CSVファイルの読み込み</h2>
-            <label for="csvUrl">CSVファイルのURLを入力してください：</label>
-            <input type="text" id="csvUrl" name="csvUrl">
-            <button onclick="loadCsv()">読み込み</button>
+            <h2>Zipファイルの読み込み</h2>
+            <input type="file" id="zipFile" name="zipFile">
+            <button onclick="loadZip()">読み込み</button>
 
             <h2>グループ選択</h2>
             <label for="groupSelect">グループを選択してください：</label>
@@ -30,9 +30,6 @@
             <select id="fileTitle" name="fileTitle" onchange="loadText()">
                 <option value="">選択してください</option>
             </select>
-            <button onclick="saveToLocal()">ローカルストレージに保存</button>
-            <button onclick="clearLocal()">ローカルストレージをクリア</button>
-            <button onclick="loadAllData()">すべてのデータを読み込む</button>
 
             <h2>ローカルストレージ検索</h2>
             <label for="searchKeyword">キーワードを入力してください：</label>
@@ -42,9 +39,6 @@
         <div class="right-column" id="rightColumn">
             <div id="textContent">
                 <p>ここにテキストが表示されます。</p>
-            </div>
-            <div id="loadingStatus">
-                <p>ここに読み込みステータスが表示されます。</p>
             </div>
             <div id="searchResults">
                 <p>ここに検索結果が表示されます。</p>
@@ -69,35 +63,56 @@
             }
         }
 
-        function loadCsv() {
-            const csvUrl = document.getElementById('csvUrl').value;
+        async function loadZip() {
+            const zipFileInput = document.getElementById('zipFile');
+            const file = zipFileInput.files[0];
+            if (!file) {
+                alert('Zipファイルを選択してください');
+                return;
+            }
 
-            fetch(csvUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('CSVファイルの読み込みに失敗しました');
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    const groupName = prompt('このCSVファイルのグループ名を入力してください:');
-                    if (!groupName) {
-                        throw new Error('グループ名が入力されませんでした');
-                    }
-                    
-                    const lines = data.split('\n');
-                    const files = lines.map(line => {
-                        const [fileUrl, title] = line.split(',');
-                        return { fileUrl: fileUrl.trim(), title: title.trim() };
-                    });
+            const zip = new JSZip();
+            try {
+                const zipData = await zip.loadAsync(file);
+                const groupName = prompt('このZipファイルのグループ名を入力してください:');
+                if (!groupName) {
+                    throw new Error('グループ名が入力されませんでした');
+                }
 
-                    localStorage.setItem(`group_${groupName}`, JSON.stringify(files));
-                    updateGroupSelect();
-                    alert('CSVファイルの読み込みと保存が完了しました');
-                })
-                .catch(error => {
-                    console.error('エラー:', error);
+                let csvData = null;
+                const textFiles = [];
+
+                for (const filename in zipData.files) {
+                    if (filename.endsWith('contents.csv')) {
+                        csvData = await zipData.files[filename].async('text');
+                    } else if (filename.endsWith('.txt')) {
+                        const textContent = await zipData.files[filename].async('text');
+                        textFiles.push({ filename, textContent });
+                    }
+                }
+
+                if (!csvData) {
+                    throw new Error('contents.csvファイルが見つかりません');
+                }
+
+                const lines = csvData.split('\n');
+                const files = lines.map(line => {
+                    const [fileUrl, title] = line.split(',');
+                    return { fileUrl: fileUrl.trim(), title: title.trim() };
                 });
+
+                localStorage.setItem(`group_${groupName}`, JSON.stringify(files));
+                
+                textFiles.forEach(file => {
+                    localStorage.setItem(`text_${groupName}_${file.filename}`, file.textContent);
+                });
+
+                updateGroupSelect();
+                alert('Zipファイルの読み込みと保存が完了しました');
+            } catch (error) {
+                console.error('エラー:', error);
+                alert('Zipファイルの読み込みに失敗しました');
+            }
         }
 
         function updateGroupSelect() {
@@ -125,7 +140,7 @@
                 const files = JSON.parse(localStorage.getItem(`group_${groupName}`));
                 files.forEach(file => {
                     const option = document.createElement('option');
-                    option.value = file.fileUrl;
+                    option.value = `${groupName}_${file.fileUrl}`;
                     option.text = file.title;
                     fileTitleSelect.add(option);
                 });
@@ -147,44 +162,7 @@
                 return;
             }
 
-            fetch(fileUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('テキストファイルの読み込みに失敗しました');
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    document.getElementById('textContent').innerText = data;
-                })
-                .catch(error => {
-                    document.getElementById('textContent').innerText = error.message;
-                });
-        }
-
-        function saveToLocal() {
-            const fileTitleSelect = document.getElementById('fileTitle');
-            const fileUrl = fileTitleSelect.value;
-            const textContent = document.getElementById('textContent').innerText;
-
-            if (textContent && fileUrl) {
-                localStorage.setItem(`text_${fileUrl}`, textContent);
-                alert('テキストがローカルストレージに保存されました');
-            } else {
-                alert('保存するテキストがありません');
-            }
-        }
-
-        function clearLocal() {
-            const fileTitleSelect = document.getElementById('fileTitle');
-            const fileUrl = fileTitleSelect.value;
-            if (fileUrl) {
-                localStorage.removeItem(`text_${fileUrl}`);
-                alert(`ファイル${fileUrl}のテキストがローカルストレージから削除されました`);
-                document.getElementById('textContent').innerText = '';
-            } else {
-                alert('削除するファイルを選択してください');
-            }
+            alert('選択されたファイルのテキストが見つかりません');
         }
 
         function searchLocal() {
@@ -203,7 +181,7 @@
             let results = [];
             const groupFiles = JSON.parse(localStorage.getItem(`group_${groupName}`)) || [];
             groupFiles.forEach(file => {
-                const textContent = localStorage.getItem(`text_${file.fileUrl}`).toLowerCase();
+                const textContent = localStorage.getItem(`text_${groupName}_${file.fileUrl}`).toLowerCase();
                 const lines = textContent.split('\n');
                 let hitCount = 0;
                 let matches = [];
@@ -245,49 +223,6 @@
             } else {
                 matchesDiv.style.display = 'none';
             }
-        }
-
-        function loadAllData() {
-            const loadingStatus = document.getElementById('loadingStatus');
-            const groupSelect = document.getElementById('groupSelect');
-            const groupName = groupSelect.value;
-
-            if (!groupName) {
-                loadingStatus.innerHTML = '<p>グループを選択してください。</p>';
-                return;
-            }
-
-            const files = JSON.parse(localStorage.getItem(`group_${groupName}`));
-
-            const filePromises = files.map(file => {
-                if (!localStorage.getItem(`text_${file.fileUrl}`)) {
-                    loadingStatus.innerHTML += `<p>${file.title}を読み込み中です...</p>`;
-
-                    return fetch(file.fileUrl)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`${file.title}の読み込みに失敗しました`);
-                            }
-                            return response.text();
-                        })
-                        .then(text => {
-                            localStorage.setItem(`text_${file.fileUrl}`, text);
-                            loadingStatus.innerHTML += `<p>${file.title}を読み込み完了</p>`;
-                        })
-                        .catch(error => {
-                            loadingStatus.innerHTML += `<p>${error.message}</p>`;
-                        });
-                }
-                return Promise.resolve();
-            });
-
-            Promise.all(filePromises)
-                .then(() => {
-                    loadingStatus.innerHTML += '<p>すべてのデータの読み込みが完了しました。</p>';
-                })
-                .catch(error => {
-                    loadingStatus.innerHTML = `<p>エラー: ${error.message}</p>`;
-                });
         }
 
         // Service Workerの登録
