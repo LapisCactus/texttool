@@ -96,7 +96,7 @@
                 }
 
                 const lines = csvData.split('\n');
-                const files = lines.map(line => {
+                const files = lines.filter(line => line != "").map(line => {
                     const [fileUrl, title] = line.split(',');
                     return { fileUrl: fileUrl.trim(), title: title.trim() };
                 });
@@ -166,7 +166,7 @@
         }
 
         function searchLocal() {
-            const keyword = document.getElementById('searchKeyword').value.toLowerCase();
+            const keyword = document.getElementById('searchKeyword').value;
             const searchResults = document.getElementById('searchResults');
             searchResults.innerHTML = '';
 
@@ -181,7 +181,18 @@
             let results = [];
             const groupFiles = JSON.parse(localStorage.getItem(`group_${groupName}`)) || [];
             groupFiles.forEach(file => {
-                const textContent = localStorage.getItem(`text_${groupName}_${file.fileUrl}`).toLowerCase();
+                if (localStorage.getItem(`text_${groupName}_${file.fileUrl}`) == null) {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        const subname = file.fileUrl.substr(0,10)
+                        if (key.startsWith(`text_${groupName}_${subname}`)) {
+                                console.log('sub found for '+subname);
+                                break;
+                        }
+                    }
+                    return;
+                }
+                const textContent = localStorage.getItem(`text_${groupName}_${file.fileUrl}`);
                 const lines = textContent.split('\n');
                 let hitCount = 0;
                 let matches = [];
