@@ -16,18 +16,9 @@
     </div>
     <div class="container">
         <div class="left-column" id="leftColumn">
-            <h2>Zipファイルの読み込み</h2>
-            <input type="file" id="zipFile" name="zipFile">
-            <button onclick="loadZip()">読み込み</button>
-
             <h2>グループ選択</h2>
             <label for="groupSelect">グループを選択してください：</label>
             <select id="groupSelect" name="groupSelect" onchange="updateFileList()">
-                <option value="">選択してください</option>
-            </select>
-
-            <label for="fileTitle">ファイルタイトルを選択してください：</label>
-            <select id="fileTitle" name="fileTitle" onchange="loadText()">
                 <option value="">選択してください</option>
             </select>
 
@@ -35,13 +26,23 @@
             <label for="searchKeyword">キーワードを入力してください：</label>
             <input type="text" id="searchKeyword" name="searchKeyword">
             <button onclick="searchLocal()">検索</button>
+
+            <h2>ファイル個別の表示</h2>
+            <label for="fileTitle">ファイルタイトルを選択してください：</label>
+            <select id="fileTitle" name="fileTitle" onchange="loadText()">
+                <option value="">選択してください</option>
+            </select>
+
+            <h2>Zipファイルの読み込み</h2>
+            <input type="file" id="zipFile" name="zipFile">
+            <button onclick="loadZip()">読み込み</button>
         </div>
         <div class="right-column" id="rightColumn">
-            <div id="textContent">
-                <p>ここにテキストが表示されます。</p>
-            </div>
             <div id="searchResults">
                 <p>ここに検索結果が表示されます。</p>
+            </div>
+            <div id="textContent">
+                <p>ここにテキストが表示されます。</p>
             </div>
         </div>
     </div>
@@ -225,6 +226,7 @@
                 });
             }
             searchResults.innerHTML = resultsHTML;
+            document.getElementById('textContent').innerText = 'ファイルを選択してください';
         }
 
         function toggleMatches(index) {

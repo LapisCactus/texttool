@@ -97,3 +97,9 @@ button:hover {
 .matches {
     margin-left: 20px;
 }
+
+.line-number {
+    text-decoration: underline;
+    cursor: pointer;
+    color: #007BFF;
+}
