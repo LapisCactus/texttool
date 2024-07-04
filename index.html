@@ -219,7 +219,7 @@
                         <div class="matches" id="matches_${index}" style="display: none;">
                     `;
                     result.matches.forEach(match => {
-                        resultsHTML += `<p>行番号: ${match.lineNumber} - ${match.line}</p>`;
+                        resultsHTML += `<p>行番号: <span class="line-number" onclick="showSurroundingLines('${result.filename}', ${match.lineNumber})">${match.lineNumber}</span> - ${match.line}</p>`;
                     });
                     resultsHTML += '</div>';
                 });
@@ -234,6 +234,22 @@
             } else {
                 matchesDiv.style.display = 'none';
             }
+        }
+
+        function showSurroundingLines(filename, lineNumber) {
+            const groupSelect = document.getElementById('groupSelect');
+            const groupName = groupSelect.value;
+            const textContent = localStorage.getItem(`text_${groupName}_${filename}`);
+            if (!textContent) {
+                alert('該当するテキストが見つかりませんでした');
+                return;
+            }
+
+            const lines = textContent.split('\n');
+            const startLine = Math.max(0, lineNumber - 11);
+            const endLine = Math.min(lines.length, lineNumber + 9);
+            const surroundingLines = lines.slice(startLine, endLine + 1).join('\n');
+            document.getElementById('textContent').innerText = surroundingLines;
         }
 
         // Service Workerの登録
