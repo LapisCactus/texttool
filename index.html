@@ -205,7 +205,7 @@
                 });
 
                 if (hitCount > 0) {
-                    results.push({ filename: file.title, hitCount: hitCount, matches: matches });
+                    results.push({ filename: file.title, fileUrl: file.fileUrl, hitCount: hitCount, matches: matches });
                 }
             });
 
@@ -219,7 +219,7 @@
                         <div class="matches" id="matches_${index}" style="display: none;">
                     `;
                     result.matches.forEach(match => {
-                        resultsHTML += `<p>行番号: <span class="line-number" onclick="showSurroundingLines('${result.filename}', ${match.lineNumber})">${match.lineNumber}</span> - ${match.line}</p>`;
+                        resultsHTML += `<p>行番号: <span class="line-number" onclick="showSurroundingLines('${result.fileUrl}', ${match.lineNumber})">${match.lineNumber}</span> - ${match.line}</p>`;
                     });
                     resultsHTML += '</div>';
                 });
@@ -236,18 +236,18 @@
             }
         }
 
-        function showSurroundingLines(filename, lineNumber) {
+        function showSurroundingLines(fileUrl, lineNumber) {
             const groupSelect = document.getElementById('groupSelect');
             const groupName = groupSelect.value;
-            const textContent = localStorage.getItem(`text_${groupName}_${filename}`);
+            const textContent = localStorage.getItem(`text_${groupName}_${fileUrl}`);
             if (!textContent) {
                 alert('該当するテキストが見つかりませんでした');
                 return;
             }
 
             const lines = textContent.split('\n');
-            const startLine = Math.max(0, lineNumber - 11);
-            const endLine = Math.min(lines.length, lineNumber + 9);
+            const startLine = Math.max(0, lineNumber - 51);
+            const endLine = Math.min(lines.length, lineNumber + 2);
             const surroundingLines = lines.slice(startLine, endLine + 1).join('\n');
             document.getElementById('textContent').innerText = surroundingLines;
         }
