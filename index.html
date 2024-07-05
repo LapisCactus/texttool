@@ -250,9 +250,12 @@
 
             const lines = textContent.split('\n');
             const startLine = Math.max(0, lineNumber - 51);
-            const endLine = Math.min(lines.length, lineNumber + 2);
-            const surroundingLines = lines.slice(startLine, endLine + 1).join('\n');
-            document.getElementById('textContent').innerText = surroundingLines;
+            const beforeLines = lines.slice(startLine, lineNumber - 1);
+            const afterLines = lines.slice(lineNumber, lineNumber + 3);
+            document.getElementById('textContent').innerHTML =
+                '<div>' + beforeLines.join('<br>') + '</div> <div class="found-line">' +
+                lines[lineNumber - 1] + '</div> <div>' +
+                afterLines.join('<br>') + '</div>';
         }
 
         // Service Workerの登録

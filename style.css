@@ -131,3 +131,7 @@ select {
     cursor: pointer;
     color: #007BFF;
 }
+
+.found-line {
+    background-color: #81beff;
+}
