@@ -6,6 +6,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icons/icon-192x192.png">
     <meta name="theme-color" content="#000000">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 </head>
@@ -248,8 +249,8 @@
             }
 
             const lines = textContent.split('\n');
-            const startLine = Math.max(0, lineNumber - 51);
-            const endLine = Math.min(lines.length, lineNumber + 2);
+            const startLine = Math.max(0, lineNumber - 11);
+            const endLine = Math.min(lines.length, lineNumber + 9);
             const surroundingLines = lines.slice(startLine, endLine + 1).join('\n');
             document.getElementById('textContent').innerText = surroundingLines;
         }
