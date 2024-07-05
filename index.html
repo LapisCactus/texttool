@@ -249,8 +249,8 @@
             }
 
             const lines = textContent.split('\n');
-            const startLine = Math.max(0, lineNumber - 11);
-            const endLine = Math.min(lines.length, lineNumber + 9);
+            const startLine = Math.max(0, lineNumber - 51);
+            const endLine = Math.min(lines.length, lineNumber + 2);
             const surroundingLines = lines.slice(startLine, endLine + 1).join('\n');
             document.getElementById('textContent').innerText = surroundingLines;
         }
