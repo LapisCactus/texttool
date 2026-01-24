@@ -17,14 +17,16 @@ function storage2_file_walk(groupName, func_per_file) {
     if (!groupName) return;
     const files = JSON.parse(localStorage.getItem(`group_${groupName}`));
     if (files) {
+        console.log('Walking files in group '+groupName+" with "+files.length+" files");
         files.forEach(file => {
-            func_per_file(file.url, file.title);
+            func_per_file(file.fileUrl, file.title);
         });
     }
 }
 
 // 指定されたファイルのテキストをlocalStorageから取得する関数
 function storage2_get_filetext(fileUrl) {
+    console.log('Getting text for '+fileUrl);
     return localStorage.getItem(`text_${fileUrl}`);
 }
 
