@@ -1,115 +1,69 @@
 // storage.js - localStorage関連の処理
+// jsZipライブラリを使用してZipファイルを読み込む
 
-// グループ選択肢を更新する関数
-// used: index, manage, loadZip function
-function storage_updateGroupSelect() {
-    const groupSelect = document.getElementById('groupSelect');
-    if (!groupSelect) return;
-    groupSelect.innerHTML = '<option value="">選択してください</option>';
+// localStorage内のグループを走査し、各グループ名に対して指定された関数を実行する関数
+function storage2_group_walk(func_per_group) {
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key.startsWith('group_')) {
             const groupName = key.split('_')[1];
-            const option = document.createElement('option');
-            option.value = groupName;
-            option.text = groupName;
-            groupSelect.add(option);
+            func_per_group(groupName);
         }
     }
 }
 
-// ファイルリスト選択肢を更新する関数
-// used: index
-function storage_updateFileList() {
-    const groupSelect = document.getElementById('groupSelect');
-    const groupName = groupSelect.value;
-    const fileTitleSelect = document.getElementById('fileTitle');
-    if (!fileTitleSelect) return;
-    fileTitleSelect.innerHTML = '<option value="">選択してください</option>';
-
-    if (groupName) {
-        const files = JSON.parse(localStorage.getItem(`group_${groupName}`));
+// 指定されたグループ内のファイルを走査し、各ファイルに対して指定された関数を実行する関数
+function storage2_file_walk(groupName, func_per_file) {
+    if (!groupName) return;
+    const files = JSON.parse(localStorage.getItem(`group_${groupName}`));
+    if (files) {
         files.forEach(file => {
-            const option = document.createElement('option');
-            option.value = `${groupName}_${file.fileUrl}`;
-            option.text = file.title;
-            fileTitleSelect.add(option);
+            func_per_file(file.url, file.title);
         });
     }
 }
 
-// テキストを読み込み表示する関数
-// used: index
-function storage_loadText() {
-    const fileTitleSelect = document.getElementById('fileTitle');
-    const fileUrl = fileTitleSelect.value;
-
-    if (!fileUrl) {
-        document.getElementById('textContent').innerText = 'ファイルを選択してください';
-        return;
-    }
-
-    const savedText = localStorage.getItem(`text_${fileUrl}`);
-    if (savedText) {
-        document.getElementById('textContent').innerText = savedText;
-        return;
-    }
-
-    alert('選択されたファイルのテキストが見つかりません');
+// 指定されたファイルのテキストをlocalStorageから取得する関数
+function storage2_get_filetext(fileUrl) {
+    return localStorage.getItem(`text_${fileUrl}`);
 }
 
-// Zipファイルを読み込み、localStorageに保存する関数
-// used: manage
-async function storage_loadZip() {
-    const zipFileInput = document.getElementById('zipFile');
-    const file = zipFileInput.files[0];
-    if (!file) {
-        alert('Zipファイルを選択してください');
-        return;
-    }
-
+// Zipファイルを読み込み、localStorageに保存する非同期関数
+async function storage2_loadZip(file) {
     const zip = new JSZip();
-    try {
-        const zipData = await zip.loadAsync(file);
-        const groupName = prompt('このZipファイルのグループ名を入力してください:');
-        if (!groupName) {
-            throw new Error('グループ名が入力されませんでした');
-        }
-
-        let csvData = null;
-        const textFiles = [];
-
-        for (const filename in zipData.files) {
-            if (filename.endsWith('contents.csv')) {
-                csvData = await zipData.files[filename].async('text');
-            } else if (filename.endsWith('.txt')) {
-                const textContent = await zipData.files[filename].async('text');
-                textFiles.push({ filename, textContent });
-            }
-        }
-
-        if (!csvData) {
-            throw new Error('contents.csvファイルが見つかりません');
-        }
-
-        const lines = csvData.split('\n');
-        const files = lines.filter(line => line != "").map(line => {
-            const [fileUrl, title] = line.split(',');
-            return { fileUrl: fileUrl.trim(), title: title.trim() };
-        });
-
-        localStorage.setItem(`group_${groupName}`, JSON.stringify(files));
-        
-        textFiles.forEach(file => {
-            localStorage.setItem(`text_${groupName}_${file.filename}`, file.textContent);
-        });
-
-        storage_updateGroupSelect();
-        alert('Zipファイルの読み込みと保存が完了しました');
-    } catch (error) {
-        console.error('エラー:', error);
-        alert('Zipファイルの読み込みに失敗しました');
+    const zipData = await zip.loadAsync(file);
+    const groupName = prompt('このZipファイルのグループ名を入力してください:');
+    if (!groupName) {
+        throw new Error('グループ名が入力されませんでした');
     }
+
+    let csvData = null;
+    const textFiles = [];
+
+    for (const filename in zipData.files) {
+        if (filename.endsWith('contents.csv')) {
+            csvData = await zipData.files[filename].async('text');
+        } else if (filename.endsWith('.txt')) {
+            const textContent = await zipData.files[filename].async('text');
+            textFiles.push({ filename, textContent });
+        }
+    }
+
+    if (!csvData) {
+        throw new Error('contents.csvファイルが見つかりません');
+    }
+
+    const lines = csvData.split('\n');
+    const files = lines.filter(line => line != "").map(line => {
+        const [fileUrl, title] = line.split(',');
+        return { fileUrl: fileUrl.trim(), title: title.trim() };
+    });
+
+    localStorage.setItem(`group_${groupName}`, JSON.stringify(files));
+    
+    textFiles.forEach(file => {
+        localStorage.setItem(`text_${groupName}_${file.filename}`, file.textContent);
+    });
 }
 
 // ローカルストレージ内をキーワードで検索する関数

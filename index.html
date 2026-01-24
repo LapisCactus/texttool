@@ -24,7 +24,7 @@
         <div class="left-column" id="leftColumn">
             <h2>グループ選択</h2>
             <label for="groupSelect">グループを選択してください：</label>
-            <select id="groupSelect" name="groupSelect" onchange="storage_updateFileList()">
+            <select id="groupSelect" name="groupSelect" onchange="index_updateFileList()">
                 <option value="">選択してください</option>
             </select>
 
@@ -51,7 +51,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            storage_updateGroupSelect();
+            index_updateGroupSelect();
         });
 
         function toggleMenu() {
@@ -65,7 +65,51 @@
                 rightColumn.style.flex = '100%';
             }
         }
+        // グループ選択肢を更新する関数
+        function index_updateGroupSelect() {
+            const groupSelect = document.getElementById('groupSelect');
+            if (!groupSelect) return;
+            groupSelect.innerHTML = '<option value="">選択してください</option>';
+            storage2_group_walk(function(groupName) {
+                const option = document.createElement('option');
+                option.value = groupName;
+                option.text = groupName;
+                groupSelect.add(option);
+            });
+        }
+        // ファイルリスト選択肢を更新する関数
+        function index_updateFileList() {
+            const groupSelect = document.getElementById('groupSelect');
+            const groupName = groupSelect.value;
+            const fileTitleSelect = document.getElementById('fileTitle');
+            if (!fileTitleSelect) return;
+            fileTitleSelect.innerHTML = '<option value="">選択してください</option>';
 
+            storage2_file_walk(groupName, function(fileUrl, title) {
+                const option = document.createElement('option');
+                option.value = `${groupName}_${fileUrl}`;
+                option.text = title;
+                fileTitleSelect.add(option);
+            });
+        }
+        // テキストを読み込み表示する関数
+        function storage_loadText() {
+            const fileTitleSelect = document.getElementById('fileTitle');
+            const fileUrl = fileTitleSelect.value;
+
+            if (!fileUrl) {
+                document.getElementById('textContent').innerText = 'ファイルを選択してください';
+                return;
+            }
+
+            const savedText = storage2_get_filetext(fileUrl);
+            if (savedText) {
+                document.getElementById('textContent').innerText = savedText;
+                return;
+            }
+
+            alert('選択されたファイルのテキストが見つかりません');
+        }
         // Service Workerの登録
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
