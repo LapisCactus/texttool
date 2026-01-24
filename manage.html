@@ -29,6 +29,7 @@
             <button onclick="manage_loadZip()">読み込み</button>
         </div>
         <div class="right-column" id="rightColumn">
+            <div id="progress"></div>
             <div>
                 <ul id="groupList"></ul>
             </div>
@@ -63,7 +64,7 @@
             });
         }
         // Zipファイルを読み込み、localStorageに保存する関数
-        function manage_loadZip() {
+        async function manage_loadZip() {
             const zipFileInput = document.getElementById('zipFile');
             const file = zipFileInput.files[0];
             const groupName = document.getElementById('groupNameInput').value.trim();
@@ -75,14 +76,18 @@
                 alert('グループ名を入力してください');
                 return;
             }
+            const progressDiv = document.getElementById('progress');
+            progressDiv.innerText = 'Zipファイルを読み込み中...';
             try {
-                storage2_loadZip(file, groupName);
+                await storage2_loadZip(file, groupName, (message) => {
+                    progressDiv.innerText = message;
+                });
+                progressDiv.innerText = '完了しました';
+                manage_updateGroupList();
                 alert('Zipファイルの読み込みと保存が完了しました');
-                setTimeout(() => {
-                    manage_updateGroupList();
-                }, 500);
             } catch (error) {
                 console.error('エラー:', error);
+                progressDiv.innerText = 'エラーが発生しました';
                 alert('Zipファイルの読み込みに失敗しました');
             }
         }

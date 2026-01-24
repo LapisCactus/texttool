@@ -47,20 +47,35 @@ function storage2_deleteGroup(groupName) {
 }
 
 // Zipファイルを読み込み、localStorageに保存する非同期関数
-async function storage2_loadZip(file, groupName) {
+async function storage2_loadZip(file, groupName, progressCallback) {
     const zip = new JSZip();
+    progressCallback('Zipファイルを展開中...');
     const zipData = await zip.loadAsync(file);
 
     let csvData = null;
     const textFiles = [];
 
+    // 読み込むファイルの総数をカウント
+    let totalFiles = 0;
+    for (const filename in zipData.files) {
+        if (filename.endsWith('contents.csv') || filename.endsWith('.txt')) {
+            totalFiles++;
+        }
+    }
+
+    let doneCount = 0;
+    progressCallback(`ファイルを読み込み中... ${doneCount} / ${totalFiles}`);
     for (const filename in zipData.files) {
         console.log('zip: read: '+filename);
         if (filename.endsWith('contents.csv')) {
             csvData = await zipData.files[filename].async('text');
+            doneCount++;
+            progressCallback(`ファイルを読み込み中... ${doneCount} / ${totalFiles}`);
         } else if (filename.endsWith('.txt')) {
             const textContent = await zipData.files[filename].async('text');
             textFiles.push({ filename, textContent });
+            doneCount++;
+            progressCallback(`ファイルを読み込み中... ${doneCount} / ${totalFiles}`);
         }
     }
 
@@ -69,18 +84,21 @@ async function storage2_loadZip(file, groupName) {
         throw new Error('contents.csvファイルが見つかりません');
     }
 
+    progressCallback('CSVデータを解析中...');
     const lines = csvData.split('\n');
     const files = lines.filter(line => line != "").map(line => {
         const [fileUrl, title] = line.split(',');
         return { fileUrl: fileUrl.trim(), title: title.trim() };
     });
     console.log('zip: save group: '+ groupName);
+    progressCallback('データを保存中...');
     localStorage.setItem(`group_${groupName}`, JSON.stringify(files));
     
     console.log('zip: save text files: '+ textFiles.length);
     textFiles.forEach(file => {
         localStorage.setItem(`text_${groupName}_${file.filename}`, file.textContent);
     });
+    progressCallback('保存完了');
 }
 
 // ローカルストレージ内をキーワードで検索する関数
