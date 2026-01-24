@@ -30,19 +30,32 @@ function storage2_get_filetext(fileUrl) {
     return localStorage.getItem(`text_${fileUrl}`);
 }
 
+// 指定されたグループをlocalStorageから削除する関数
+function storage2_deleteGroup(groupName) {
+    // group_ キーを削除
+    localStorage.removeItem(`group_${groupName}`);
+    
+    // text_{groupName}_ で始まるキーを全て削除
+    const keysToDelete = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(`text_${groupName}_`)) {
+            keysToDelete.push(key);
+        }
+    }
+    keysToDelete.forEach(key => localStorage.removeItem(key));
+}
+
 // Zipファイルを読み込み、localStorageに保存する非同期関数
-async function storage2_loadZip(file) {
+async function storage2_loadZip(file, groupName) {
     const zip = new JSZip();
     const zipData = await zip.loadAsync(file);
-    const groupName = prompt('このZipファイルのグループ名を入力してください:');
-    if (!groupName) {
-        throw new Error('グループ名が入力されませんでした');
-    }
 
     let csvData = null;
     const textFiles = [];
 
     for (const filename in zipData.files) {
+        console.log('zip: read: '+filename);
         if (filename.endsWith('contents.csv')) {
             csvData = await zipData.files[filename].async('text');
         } else if (filename.endsWith('.txt')) {
@@ -52,6 +65,7 @@ async function storage2_loadZip(file) {
     }
 
     if (!csvData) {
+        console.error('contents.csvファイルが見つかりません');
         throw new Error('contents.csvファイルが見つかりません');
     }
 
@@ -60,9 +74,10 @@ async function storage2_loadZip(file) {
         const [fileUrl, title] = line.split(',');
         return { fileUrl: fileUrl.trim(), title: title.trim() };
     });
-
+    console.log('zip: save group: '+ groupName);
     localStorage.setItem(`group_${groupName}`, JSON.stringify(files));
     
+    console.log('zip: save text files: '+ textFiles.length);
     textFiles.forEach(file => {
         localStorage.setItem(`text_${groupName}_${file.filename}`, file.textContent);
     });

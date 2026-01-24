@@ -23,13 +23,12 @@
     <div class="container">
         <div class="left-column" id="leftColumn">
             <h2>Zipファイルの読み込み</h2>
+            <label for="groupNameInput">グループ名：</label>
+            <input type="text" id="groupNameInput" name="groupNameInput" placeholder="グループ名を入力">
             <input type="file" id="zipFile" name="zipFile">
             <button onclick="manage_loadZip()">読み込み</button>
         </div>
         <div class="right-column" id="rightColumn">
-            <div id="manageContent">
-                <p>管理機能を使用してください。</p>
-            </div>
             <div>
                 <ul id="groupList"></ul>
             </div>
@@ -59,7 +58,7 @@
             groupList.innerHTML = '';
             storage2_group_walk(function(groupName) {
                 const li = document.createElement('li');
-                li.innerText = groupName;
+                li.innerHTML = `${groupName} <button onclick="manage_deleteGroup('${groupName}')">削除</button>`;
                 groupList.appendChild(li);
             });
         }
@@ -67,17 +66,32 @@
         function manage_loadZip() {
             const zipFileInput = document.getElementById('zipFile');
             const file = zipFileInput.files[0];
+            const groupName = document.getElementById('groupNameInput').value.trim();
             if (!file) {
                 alert('Zipファイルを選択してください');
                 return;
             }
+            if (!groupName) {
+                alert('グループ名を入力してください');
+                return;
+            }
             try {
-                storage2_loadZip(file);
-                manage_updateGroupList();
+                storage2_loadZip(file, groupName);
                 alert('Zipファイルの読み込みと保存が完了しました');
+                setTimeout(() => {
+                    manage_updateGroupList();
+                }, 500);
             } catch (error) {
                 console.error('エラー:', error);
                 alert('Zipファイルの読み込みに失敗しました');
+            }
+        }
+        // 指定されたグループを削除する関数
+        function manage_deleteGroup(groupName) {
+            if (confirm(`グループ "${groupName}" を削除しますか？`)) {
+                storage2_deleteGroup(groupName);
+                manage_updateGroupList();
+                alert(`グループ "${groupName}" を削除しました`);
             }
         }
         // Service Workerの登録
