@@ -30,7 +30,7 @@
 
             <h2>Zipファイルの読み込み</h2>
             <input type="file" id="zipFile" name="zipFile">
-            <button onclick="loadZip()">読み込み</button>
+            <button onclick="storage_loadZip()">読み込み</button>
         </div>
         <div class="right-column" id="rightColumn">
             <div id="manageContent">
@@ -41,7 +41,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            updateGroupSelect();
+            storage_updateGroupSelect();
         });
 
         function toggleMenu() {

@@ -1,6 +1,8 @@
 // storage.js - localStorage関連の処理
 
-function updateGroupSelect() {
+// グループ選択肢を更新する関数
+// used: index, manage, loadZip function
+function storage_updateGroupSelect() {
     const groupSelect = document.getElementById('groupSelect');
     if (!groupSelect) return;
     groupSelect.innerHTML = '<option value="">選択してください</option>';
@@ -16,7 +18,9 @@ function updateGroupSelect() {
     }
 }
 
-function updateFileList() {
+// ファイルリスト選択肢を更新する関数
+// used: index
+function storage_updateFileList() {
     const groupSelect = document.getElementById('groupSelect');
     const groupName = groupSelect.value;
     const fileTitleSelect = document.getElementById('fileTitle');
@@ -34,7 +38,9 @@ function updateFileList() {
     }
 }
 
-function loadText() {
+// テキストを読み込み表示する関数
+// used: index
+function storage_loadText() {
     const fileTitleSelect = document.getElementById('fileTitle');
     const fileUrl = fileTitleSelect.value;
 
@@ -52,7 +58,9 @@ function loadText() {
     alert('選択されたファイルのテキストが見つかりません');
 }
 
-async function loadZip() {
+// Zipファイルを読み込み、localStorageに保存する関数
+// used: manage
+async function storage_loadZip() {
     const zipFileInput = document.getElementById('zipFile');
     const file = zipFileInput.files[0];
     if (!file) {
@@ -96,7 +104,7 @@ async function loadZip() {
             localStorage.setItem(`text_${groupName}_${file.filename}`, file.textContent);
         });
 
-        updateGroupSelect();
+        storage_updateGroupSelect();
         alert('Zipファイルの読み込みと保存が完了しました');
     } catch (error) {
         console.error('エラー:', error);
@@ -104,7 +112,9 @@ async function loadZip() {
     }
 }
 
-function searchLocal() {
+// ローカルストレージ内をキーワードで検索する関数
+// used: index
+function storage_searchLocal() {
     const keyword = document.getElementById('searchKeyword').value;
     const searchResults = document.getElementById('searchResults');
     searchResults.innerHTML = '';
@@ -167,6 +177,8 @@ function searchLocal() {
     document.getElementById('textContent').innerText = 'ファイルを選択してください';
 }
 
+// マッチ部分の表示/非表示を切り替える関数、生成された検索結果HTML内部で利用
+// used: index, searchLocal function
 function toggleMatches(index) {
     const matchesDiv = document.getElementById(`matches_${index}`);
     if (matchesDiv.style.display === 'none') {
@@ -176,6 +188,8 @@ function toggleMatches(index) {
     }
 }
 
+// 指定された行番号の前後の行を表示する関数、生成された検索結果HTML内部で利用
+// used: index, searchLocal function
 function showSurroundingLines(fileUrl, lineNumber) {
     const groupSelect = document.getElementById('groupSelect');
     const groupName = groupSelect.value;
