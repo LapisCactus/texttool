@@ -11,6 +11,7 @@ body {
     text-align: center;
     display: flex;
     align-items: center;
+    justify-content: space-between;
 }
 
 .app-bar h1 {
@@ -27,6 +28,24 @@ body {
     cursor: pointer;
     padding: 4px;
     width: auto;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.action-buttons button {
+    background: none;
+    border: 1px solid white;
+    color: white;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.action-buttons button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .container {

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>管理ページ</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon-192x192.png">
+    <meta name="theme-color" content="#000000">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="storage.js"></script>
+</head>
+<body>
+    <div class="app-bar">
+        <button class="menu-button" onclick="toggleMenu()">&#9776;</button>
+        <h1>テキスト表示アプリ - 管理</h1>
+        <div class="action-buttons">
+            <button onclick="location.href='index.html'">📄 Index</button>
+            <button onclick="location.href='manage.html'">⚙️ Manage</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="left-column" id="leftColumn">
+            <h2>Zipファイルの読み込み</h2>
+            <label for="groupNameInput">グループ名：</label>
+            <input type="text" id="groupNameInput" name="groupNameInput" placeholder="グループ名を入力">
+            <input type="file" id="zipFile" name="zipFile">
+            <button onclick="manage_loadZip()">読み込み</button>
+        </div>
+        <div class="right-column" id="rightColumn">
+            <div id="progress"></div>
+            <div>
+                <ul id="groupList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            manage_updateGroupList();
+        });
+
+        function toggleMenu() {
+            const leftColumn = document.getElementById('leftColumn');
+            const rightColumn = document.getElementById('rightColumn');
+            if (leftColumn.style.display === 'none') {
+                leftColumn.style.display = 'block';
+                rightColumn.style.flex = '1';
+            } else {
+                leftColumn.style.display = 'none';
+                rightColumn.style.flex = '100%';
+            }
+        }
+        // 管理画面のグループリストを更新する関数
+        function manage_updateGroupList() {
+            const groupList = document.getElementById('groupList');
+            if (!groupList) return;
+            groupList.innerHTML = '';
+            storage2_group_walk(function(groupName) {
+                const li = document.createElement('li');
+                li.innerHTML = `${groupName} <button onclick="manage_deleteGroup('${groupName}')">削除</button>`;
+                groupList.appendChild(li);
+            });
+        }
+        // Zipファイルを読み込み、localStorageに保存する関数
+        async function manage_loadZip() {
+            const zipFileInput = document.getElementById('zipFile');
+            const file = zipFileInput.files[0];
+            const groupName = document.getElementById('groupNameInput').value.trim();
+            if (!file) {
+                alert('Zipファイルを選択してください');
+                return;
+            }
+            if (!groupName) {
+                alert('グループ名を入力してください');
+                return;
+            }
+            const progressDiv = document.getElementById('progress');
+            progressDiv.innerText = 'Zipファイルを読み込み中...';
+            try {
+                await storage2_loadZip(file, groupName, (message) => {
+                    progressDiv.innerText = message;
+                });
+                progressDiv.innerText = '完了しました';
+                manage_updateGroupList();
+                alert('Zipファイルの読み込みと保存が完了しました');
+            } catch (error) {
+                console.error('エラー:', error);
+                progressDiv.innerText = 'エラーが発生しました';
+                alert('Zipファイルの読み込みに失敗しました');
+            }
+        }
+        // 指定されたグループを削除する関数
+        function manage_deleteGroup(groupName) {
+            if (confirm(`グループ "${groupName}" を削除しますか？`)) {
+                storage2_deleteGroup(groupName);
+                manage_updateGroupList();
+                alert(`グループ "${groupName}" を削除しました`);
+            }
+        }
+        // Service Workerの登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('service-worker.js').then(function(registration) {
+                    console.log('Service Workerの登録に成功しました:', registration.scope);
+                }, function(err) {
+                    console.log('Service Workerの登録に失敗しました:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
