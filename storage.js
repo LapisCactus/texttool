@@ -188,12 +188,90 @@ function showSurroundingLines(fileUrl, lineNumber) {
         return;
     }
 
-    const lines = textContent.split('\n');
-    const startLine = Math.max(0, lineNumber - 51);
-    const beforeLines = lines.slice(startLine, lineNumber - 1);
-    const afterLines = lines.slice(lineNumber, lineNumber + 3);
-    document.getElementById('textContent').innerHTML =
-        '<div>' + beforeLines.join('<br>') + '</div> <div class="found-line">' +
-        lines[lineNumber - 1] + '</div> <div>' +
-        afterLines.join('<br>') + '</div>';
+    const chunks = splitIntoChunks(textContent);
+    if (chunks.length > 0) {
+        showChunkSelector(chunks, fileUrl);
+        // 検索行が含まれるチャンクを見つけて表示
+        let currentLineCount = 0;
+        for (let i = 0; i < chunks.length; i++) {
+            const chunkLines = chunks[i].split('\n').length;
+            if (currentLineCount + chunkLines >= lineNumber) {
+                const select = document.getElementById('chunkSelect');
+                select.value = i;
+                displayChunk(i);
+                break;
+            }
+            currentLineCount += chunkLines + 1; // +1 for the "\n\n" delimiter
+        }
+    } else {
+        // チャンク数が1以下の場合は通常表示
+        const lines = textContent.split('\n');
+        const startLine = Math.max(0, lineNumber - 51);
+        const beforeLines = lines.slice(startLine, lineNumber - 1);
+        const afterLines = lines.slice(lineNumber, lineNumber + 3);
+        document.getElementById('textContent').innerHTML =
+            '<div>' + beforeLines.join('<br>') + '</div> <div class="found-line">' +
+            lines[lineNumber - 1] + '</div> <div>' +
+            afterLines.join('<br>') + '</div>';
+        hideChunkSelector();
+    }
+}
+
+// グローバル変数：現在のチャンクデータを保持
+let currentChunks = [];
+let currentFileUrl = null;
+
+// テキストを "\n\n" で分割してチャンク配列を返す関数
+function splitIntoChunks(text) {
+    if (!text) return [];
+    return text.split('\n\n').filter(chunk => chunk.trim().length > 0);
+}
+
+// チャンクドロップダウンを表示する関数
+function showChunkSelector(chunks, fileUrl) {
+    currentChunks = chunks;
+    currentFileUrl = fileUrl;
+    
+    const selectorDiv = document.getElementById('chunkSelector');
+    if (!selectorDiv) return;
+    
+    if (chunks.length <= 1) {
+        selectorDiv.style.display = 'none';
+        return;
+    }
+    
+    const select = selectorDiv.querySelector('select');
+    select.innerHTML = '';
+    chunks.forEach((chunk, index) => {
+        const option = document.createElement('option');
+        const chunkPreview = chunk.substring(0, 50).replace(/\n/g, ' ');
+        option.value = index;
+        option.text = `チャンク ${index + 1}: ${chunkPreview}${chunk.length > 50 ? '...' : ''}`;
+        select.appendChild(option);
+    });
+    
+    selectorDiv.style.display = 'block';
+    select.value = '0';
+    displayChunk(0);
+}
+
+// チャンクドロップダウンを非表示にする関数
+function hideChunkSelector() {
+    const selectorDiv = document.getElementById('chunkSelector');
+    if (selectorDiv) {
+        selectorDiv.style.display = 'none';
+    }
+    currentChunks = [];
+    currentFileUrl = null;
+}
+
+// 指定したインデックスのチャンクを表示する関数
+function displayChunk(chunkIndex) {
+    if (chunkIndex < 0 || chunkIndex >= currentChunks.length) {
+        return;
+    }
+    
+    const chunk = currentChunks[chunkIndex];
+    const textContent = document.getElementById('textContent');
+    textContent.innerText = chunk;
 }

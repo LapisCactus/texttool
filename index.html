@@ -43,6 +43,12 @@
             <div id="searchResults">
                 <p>ここに検索結果が表示されます。</p>
             </div>
+            <div id="chunkSelector" style="display: none;">
+                <label for="chunkSelect">チャンク選択：</label>
+                <select id="chunkSelect" name="chunkSelect" onchange="displayChunk(parseInt(this.value))">
+                    <option value="0">チャンク 1</option>
+                </select>
+            </div>
             <div id="textContent">
                 <p>ここにテキストが表示されます。</p>
             </div>
@@ -99,16 +105,19 @@
 
             if (!fileUrl) {
                 document.getElementById('textContent').innerText = 'ファイルを選択してください';
+                hideChunkSelector();
                 return;
             }
 
             const savedText = storage2_get_filetext(fileUrl);
             if (savedText) {
-                document.getElementById('textContent').innerText = savedText;
+                const chunks = splitIntoChunks(savedText);
+                showChunkSelector(chunks, fileUrl);
                 return;
             }
 
             alert('選択されたファイルのテキストが見つかりません');
+            hideChunkSelector();
         }
         // Service Workerの登録
         if ('serviceWorker' in navigator) {
