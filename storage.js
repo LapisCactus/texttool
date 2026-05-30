@@ -196,9 +196,10 @@ function showSurroundingLines(fileUrl, lineNumber) {
         for (let i = 0; i < chunks.length; i++) {
             const chunkLines = chunks[i].split('\n').length;
             if (currentLineCount + chunkLines >= lineNumber) {
+                const highlightLineInChunk = lineNumber - currentLineCount - 1;
                 const select = document.getElementById('chunkSelect');
                 select.value = i;
-                displayChunk(i);
+                displayChunk(i, highlightLineInChunk);
                 break;
             }
             currentLineCount += chunkLines + 1; // +1 for the "\n\n" delimiter
@@ -266,12 +267,40 @@ function hideChunkSelector() {
 }
 
 // 指定したインデックスのチャンクを表示する関数
-function displayChunk(chunkIndex) {
+function displayChunk(chunkIndex, highlightLineNumber = -1) {
     if (chunkIndex < 0 || chunkIndex >= currentChunks.length) {
         return;
     }
     
     const chunk = currentChunks[chunkIndex];
     const textContent = document.getElementById('textContent');
-    textContent.innerText = chunk;
+    
+    if (highlightLineNumber < 0) {
+        // ハイライト不要の場合は通常表示
+        textContent.innerText = chunk;
+    } else {
+        // ハイライト表示
+        const lines = chunk.split('\n');
+        let html = '';
+        lines.forEach((line, index) => {
+            if (index === highlightLineNumber) {
+                html += `<div class="found-line">${escapeHtml(line)}</div>`;
+            } else {
+                html += `<div>${escapeHtml(line)}</div>`;
+            }
+        });
+        textContent.innerHTML = html;
+    }
+}
+
+// HTMLエスケープ用ユーティリティ関数
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
