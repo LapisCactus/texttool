@@ -238,6 +238,9 @@ function showChunkSelector(chunks, fileUrl) {
     
     if (chunks.length <= 1) {
         selectorDiv.style.display = 'none';
+        if (chunks.length === 1) {
+            displayChunk(0);
+        }
         return;
     }
     

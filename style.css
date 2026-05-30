@@ -138,7 +138,7 @@ select {
 
 #chunkSelector select {
     display: inline;
-    width: auto;
+    width: 100%;
     margin: 0;
     padding: 8px;
 }
