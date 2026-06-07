@@ -107,6 +107,7 @@ function storage_searchLocal() {
     const keyword = document.getElementById('searchKeyword').value;
     const searchResults = document.getElementById('searchResults');
     searchResults.innerHTML = '';
+    searchResults.style.display = 'block';
 
     const groupSelect = document.getElementById('groupSelect');
     const groupName = groupSelect.value;

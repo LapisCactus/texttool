@@ -23,24 +23,42 @@
     <div class="container">
         <div class="left-column" id="leftColumn">
             <h2>グループ選択</h2>
-            <label for="groupSelect">グループを選択してください：</label>
-            <select id="groupSelect" name="groupSelect" onchange="index_updateFileList()">
-                <option value="">選択してください</option>
-            </select>
+            <div id="groupSelectArea">
+                <label for="groupSelect">グループを選択してください：</label>
+                <select id="groupSelect" name="groupSelect" onchange="onGroupSelected()">
+                    <option value="">選択してください</option>
+                </select>
+            </div>
+            <div id="selectedGroupArea" class="selected-group" style="display: none;">
+                <span id="selectedGroupLabel"></span>
+                <button type="button" class="clear-group-button" onclick="clearSelectedGroup()">✕</button>
+            </div>
 
-            <h2>ローカルストレージ検索</h2>
-            <label for="searchKeyword">キーワードを入力してください：</label>
-            <input type="text" id="searchKeyword" name="searchKeyword">
-            <button onclick="storage_searchLocal()">検索</button>
+            <div id="searchToggleArea" style="display: none;">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="searchModeToggle" onchange="onSearchToggleChange()">
+                    <span class="slider"></span>
+                    <span class="toggle-label">検索モード</span>
+                </label>
+            </div>
 
-            <h2>ファイル個別の表示</h2>
-            <label for="fileTitle">ファイルタイトルを選択してください：</label>
-            <select id="fileTitle" name="fileTitle" onchange="storage_loadText()">
-                <option value="">選択してください</option>
-            </select>
+            <div id="searchArea" style="display: none;">
+                <h2>ローカルストレージ検索</h2>
+                <label for="searchKeyword">キーワードを入力してください：</label>
+                <input type="text" id="searchKeyword" name="searchKeyword">
+                <button type="button" onclick="storage_searchLocal()">検索</button>
+            </div>
+
+            <div id="fileArea" style="display: none;">
+                <h2>ファイル個別の表示</h2>
+                <label for="fileTitle">ファイルタイトルを選択してください：</label>
+                <select id="fileTitle" name="fileTitle" onchange="storage_loadText()">
+                    <option value="">選択してください</option>
+                </select>
+            </div>
         </div>
         <div class="right-column" id="rightColumn">
-            <div id="searchResults">
+            <div id="searchResults" style="display: none;">
                 <p>ここに検索結果が表示されます。</p>
             </div>
             <div id="chunkSelector" style="display: none;">
@@ -58,6 +76,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             index_updateGroupSelect();
+            resetViewForNoGroup();
         });
 
         function toggleMenu() {
@@ -71,6 +90,101 @@
                 rightColumn.style.flex = '100%';
             }
         }
+
+        function resetViewForNoGroup() {
+            const groupSelectArea = document.getElementById('groupSelectArea');
+            const selectedGroupArea = document.getElementById('selectedGroupArea');
+            const searchToggleArea = document.getElementById('searchToggleArea');
+            const searchArea = document.getElementById('searchArea');
+            const fileArea = document.getElementById('fileArea');
+            const searchResults = document.getElementById('searchResults');
+            const textContent = document.getElementById('textContent');
+            const chunkSelector = document.getElementById('chunkSelector');
+            const searchModeToggle = document.getElementById('searchModeToggle');
+            const searchKeyword = document.getElementById('searchKeyword');
+            const groupSelect = document.getElementById('groupSelect');
+            const fileTitleSelect = document.getElementById('fileTitle');
+
+            if (groupSelectArea) groupSelectArea.style.display = 'block';
+            if (selectedGroupArea) selectedGroupArea.style.display = 'none';
+            if (searchToggleArea) searchToggleArea.style.display = 'none';
+            if (searchArea) searchArea.style.display = 'none';
+            if (fileArea) fileArea.style.display = 'none';
+            if (searchResults) searchResults.style.display = 'none';
+            if (chunkSelector) chunkSelector.style.display = 'none';
+            if (textContent) {
+                textContent.style.display = 'none';
+                textContent.innerHTML = '<p>ここにテキストが表示されます。</p>';
+            }
+            if (searchModeToggle) searchModeToggle.checked = false;
+            if (searchKeyword) searchKeyword.value = '';
+            if (groupSelect) groupSelect.value = '';
+            if (fileTitleSelect) fileTitleSelect.innerHTML = '<option value="">選択してください</option>';
+        }
+
+        function setTextContentMessage(message) {
+            const textContent = document.getElementById('textContent');
+            if (!textContent) return;
+            textContent.style.display = 'block';
+            textContent.innerHTML = `<p>${message}</p>`;
+        }
+
+        function onGroupSelected() {
+            const groupSelect = document.getElementById('groupSelect');
+            const groupName = groupSelect ? groupSelect.value : '';
+            if (!groupName) {
+                resetViewForNoGroup();
+                return;
+            }
+
+            document.getElementById('selectedGroupLabel').textContent = groupName;
+            document.getElementById('groupSelectArea').style.display = 'none';
+            document.getElementById('selectedGroupArea').style.display = 'flex';
+            document.getElementById('searchToggleArea').style.display = 'block';
+            document.getElementById('searchModeToggle').checked = false;
+
+            updateSearchMode(false);
+            index_updateFileList();
+            setTextContentMessage('ファイルを選択してください');
+        }
+
+        function clearSelectedGroup() {
+            const groupSelect = document.getElementById('groupSelect');
+            if (groupSelect) {
+                groupSelect.value = '';
+            }
+            resetViewForNoGroup();
+        }
+
+        function onSearchToggleChange() {
+            const enabled = document.getElementById('searchModeToggle').checked;
+            updateSearchMode(enabled);
+        }
+
+        function updateSearchMode(enabled) {
+            const searchArea = document.getElementById('searchArea');
+            const searchResults = document.getElementById('searchResults');
+            const fileArea = document.getElementById('fileArea');
+            const chunkSelector = document.getElementById('chunkSelector');
+
+            if (enabled) {
+                if (searchArea) searchArea.style.display = 'block';
+                if (searchResults) {
+                    searchResults.style.display = 'block';
+                    searchResults.innerHTML = '<p>検索結果がここに表示されます。</p>';
+                }
+                if (fileArea) fileArea.style.display = 'none';
+                if (chunkSelector) chunkSelector.style.display = 'none';
+                setTextContentMessage('検索キーワードを入力して検索してください');
+            } else {
+                if (searchArea) searchArea.style.display = 'none';
+                if (searchResults) searchResults.style.display = 'none';
+                if (fileArea) fileArea.style.display = 'block';
+                if (chunkSelector) chunkSelector.style.display = 'none';
+                setTextContentMessage('ファイルを選択してください');
+            }
+        }
+
         // グループ選択肢を更新する関数
         function index_updateGroupSelect() {
             const groupSelect = document.getElementById('groupSelect');
@@ -86,11 +200,12 @@
         // ファイルリスト選択肢を更新する関数
         function index_updateFileList() {
             const groupSelect = document.getElementById('groupSelect');
-            const groupName = groupSelect.value;
+            const groupName = groupSelect ? groupSelect.value : '';
             const fileTitleSelect = document.getElementById('fileTitle');
             if (!fileTitleSelect) return;
             fileTitleSelect.innerHTML = '<option value="">選択してください</option>';
 
+            if (!groupName) return;
             storage2_file_walk(groupName, function(fileUrl, title) {
                 const option = document.createElement('option');
                 option.value = `${groupName}_${fileUrl}`;
@@ -101,10 +216,10 @@
         // テキストを読み込み表示する関数
         function storage_loadText() {
             const fileTitleSelect = document.getElementById('fileTitle');
-            const fileUrl = fileTitleSelect.value;
+            const fileUrl = fileTitleSelect ? fileTitleSelect.value : '';
 
             if (!fileUrl) {
-                document.getElementById('textContent').innerText = 'ファイルを選択してください';
+                setTextContentMessage('ファイルを選択してください');
                 hideChunkSelector();
                 return;
             }
